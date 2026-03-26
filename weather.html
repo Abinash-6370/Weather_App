@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SKYE — Weather</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Outfit:wght@200;300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --glass:rgba(255,255,255,0.07);
+  --glass-hover:rgba(255,255,255,0.12);
+  --glass-border:rgba(255,255,255,0.13);
+  --glass-bright:rgba(255,255,255,0.26);
+  --gold:#f5c842;--gold-l:#fde88a;
+  --ice:#a8d8f0;--ice-b:#d4f1ff;
+  --text:#f0f4ff;--dim:rgba(240,244,255,0.5);--dimmer:rgba(240,244,255,0.3);
+  --red:#ff6b6b;--green:#69ffb4;
+  --r:22px;
+}
+html,body{height:100%;font-family:'Outfit',sans-serif;color:var(--text);overflow-x:hidden;}
+body{background:#0f0c29;position:relative;}
+
+/* ── SKY ── */
+.sky{position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);overflow:hidden;transition:background 2s ease;}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:0.5;animation:drift linear infinite;pointer-events:none;}
+.o1{width:650px;height:650px;background:radial-gradient(circle,#4a90d9,transparent 70%);top:-220px;left:-120px;animation-duration:26s;}
+.o2{width:520px;height:520px;background:radial-gradient(circle,#9b59b6,transparent 70%);top:15%;right:-160px;animation-duration:32s;animation-delay:-11s;}
+.o3{width:430px;height:430px;background:radial-gradient(circle,#1abc9c,transparent 70%);bottom:-120px;left:28%;animation-duration:22s;animation-delay:-6s;}
+.o4{width:380px;height:380px;background:radial-gradient(circle,#e67e22,transparent 70%);bottom:25%;right:8%;animation-duration:38s;animation-delay:-18s;opacity:0.3;}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}25%{transform:translate(45px,-35px) scale(1.06)}50%{transform:translate(-25px,55px) scale(0.94)}75%{transform:translate(35px,25px) scale(1.04)}100%{transform:translate(0,0) scale(1)}}
+.stars{position:absolute;inset:0;}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:0.15;transform:scale(1)}50%{opacity:0.9;transform:scale(1.5)}}
+.sky::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;}
+
+/* ── APP ── */
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:50px 20px 80px;max-width:1000px;margin:0 auto;}
+
+/* ── HEADER ── */
+header{text-align:center;margin-bottom:50px;animation:riseIn 1s cubic-bezier(.16,1,.3,1) both;}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;}
+.logo-icon{font-size:2.6rem;animation:float 4s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.logo{font-family:'Playfair Display',serif;font-size:clamp(2.8rem,7vw,5rem);font-weight:900;letter-spacing:0.06em;background:linear-gradient(135deg,#fff 0%,var(--ice) 40%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.tagline{font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--dim);margin-top:8px;}
+.dot{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;margin-right:7px;vertical-align:middle;animation:pulse 2s ease infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(105,255,180,.6)}50%{box-shadow:0 0 0 7px rgba(105,255,180,0)}}
+
+/* ── API PANEL ── */
+.api-panel{width:100%;max-width:540px;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r);padding:26px 30px;backdrop-filter:blur(24px);margin-bottom:28px;animation:riseIn 1s .1s cubic-bezier(.16,1,.3,1) both;box-shadow:0 16px 48px rgba(0,0,0,0.3);}
+.ap-title{font-size:0.75rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px;}
+.api-panel p{font-size:0.85rem;color:var(--dim);line-height:1.7;margin-bottom:16px;}
+.api-panel a{color:var(--ice-b);text-decoration:none;}
+.api-panel a:hover{text-decoration:underline;}
+.api-row{display:flex;gap:8px;}
+.api-row input{flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);border-radius:11px;padding:11px 15px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.78rem;outline:none;transition:border-color .3s;}
+.api-row input:focus{border-color:var(--gold);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#d4900a);border:none;border-radius:11px;padding:11px 22px;color:#1a1000;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.86rem;cursor:pointer;transition:transform .15s,opacity .2s;white-space:nowrap;letter-spacing:.02em;}
+.btn-gold:hover{opacity:.88;transform:scale(.97);}
+.btn-gold:active{transform:scale(.93);}
+
+/* ── SEARCH ── */
+.search-wrap{width:100%;max-width:560px;margin-bottom:38px;animation:riseIn 1s .2s cubic-bezier(.16,1,.3,1) both;}
+.search-box{display:flex;align-items:center;background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;padding:7px 7px 7px 22px;backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);transition:border-color .4s,box-shadow .4s;box-shadow:0 10px 40px rgba(0,0,0,.32);}
+.search-box:focus-within{border-color:var(--glass-bright);box-shadow:0 10px 50px rgba(168,216,240,.22),0 0 0 1px rgba(255,255,255,.1);}
+.si{font-size:1.1rem;color:var(--dimmer);margin-right:6px;}
+.search-box input{flex:1;background:none;border:none;outline:none;font-family:'Outfit',sans-serif;font-size:1rem;color:var(--text);padding:7px 0;}
+.search-box input::placeholder{color:var(--dimmer);}
+.sbtn{background:linear-gradient(135deg,rgba(168,216,240,.25),rgba(168,216,240,.1));border:1px solid rgba(168,216,240,.24);border-radius:14px;padding:12px 24px;color:var(--ice-b);font-family:'Outfit',sans-serif;font-weight:500;font-size:.9rem;cursor:pointer;transition:background .3s,transform .15s,box-shadow .3s;}
+.sbtn:hover{background:linear-gradient(135deg,rgba(168,216,240,.38),rgba(168,216,240,.2));box-shadow:0 4px 20px rgba(168,216,240,.25);transform:scale(.98);}
+.sbtn:active{transform:scale(.94);}
+.unit-row{display:flex;justify-content:flex-end;gap:0;margin-top:11px;}
+.ubtn{background:var(--glass);border:1px solid var(--glass-border);color:var(--dim);font-family:'Space Mono',monospace;font-size:.7rem;padding:7px 18px;cursor:pointer;transition:all .25s;}
+.ubtn:first-child{border-radius:9px 0 0 9px;}
+.ubtn:last-child{border-radius:0 9px 9px 0;border-left:none;}
+.ubtn.active{background:linear-gradient(135deg,rgba(245,200,66,.25),rgba(245,200,66,.1));border-color:rgba(245,200,66,.4);color:var(--gold);}
+
+/* ── ERROR ── */
+.err{width:100%;max-width:560px;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3);border-radius:13px;padding:14px 20px;font-size:.86rem;color:var(--red);margin-bottom:22px;display:none;animation:shake .45s ease;}
+.err.show{display:block;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}60%{transform:translateX(8px)}}
+
+/* ── LOADER ── */
+.loader{display:none;flex-direction:column;align-items:center;gap:20px;padding:70px 0;}
+.loader.show{display:flex;}
+.ring{width:56px;height:56px;position:relative;}
+.ring::before,.ring::after{content:'';position:absolute;inset:0;border-radius:50%;}
+.ring::before{border:2px solid rgba(255,255,255,.07);}
+.ring::after{border:2.5px solid transparent;border-top-color:var(--gold);border-right-color:var(--ice);animation:spin .85s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.22em;color:var(--dim);}
+
+/* ── OUTPUT ── */
+.output{width:100%;display:none;flex-direction:column;gap:18px;}
+.output.show{display:flex;}
+
+/* ── HERO ── */
+.hero{position:relative;overflow:hidden;background:var(--glass);border:1px solid var(--glass-border);border-radius:28px;backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);box-shadow:0 24px 70px rgba(0,0,0,.45);animation:riseIn .7s cubic-bezier(.16,1,.3,1) both;}
+.hero-band{height:3px;width:100%;background:linear-gradient(90deg,var(--ice),var(--gold),var(--ice),var(--ice));background-size:300%;animation:shimmer 3.5s linear infinite;}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:300%}}
+.hero-deco{position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(168,216,240,.09),transparent 70%);pointer-events:none;}
+.hero-deco2{position:absolute;left:-60px;bottom:-60px;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(245,200,66,.06),transparent 70%);pointer-events:none;}
+.hero-body{padding:38px 44px 34px;}
+.htop{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:22px;}
+.cname{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,5vw,3.2rem);font-weight:700;line-height:1;text-shadow:0 2px 20px rgba(0,0,0,.4);}
+.csub{font-family:'Space Mono',monospace;font-size:.67rem;letter-spacing:.18em;color:var(--dim);margin-top:9px;}
+.tbig{font-family:'Playfair Display',serif;font-size:clamp(4.5rem,12vw,8rem);font-weight:900;line-height:.9;background:linear-gradient(160deg,#fff 30%,var(--ice) 65%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 14px rgba(168,216,240,.28));text-align:right;}
+.tfeels{font-size:.82rem;color:var(--dim);margin-top:7px;font-weight:300;text-align:right;}
+.hcond{display:flex;align-items:center;gap:18px;margin-top:30px;padding-top:26px;border-top:1px solid var(--glass-border);}
+.cico{font-size:3.8rem;line-height:1;filter:drop-shadow(0 4px 18px rgba(255,255,255,.3));animation:float 3.5s ease-in-out infinite;}
+.cdesc{font-size:1.1rem;font-weight:500;text-transform:capitalize;letter-spacing:.02em;}
+.cextra{font-size:.8rem;color:var(--dim);margin-top:4px;}
+.hilo{margin-left:auto;font-family:'Space Mono',monospace;font-size:.85rem;text-align:right;}
+.hhi{color:var(--gold);}.hlo{color:var(--ice);margin-top:4px;}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+.sc{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;padding:22px 20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative;overflow:hidden;cursor:default;transition:transform .25s,border-color .3s,box-shadow .3s;}
+.sc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.06),transparent);opacity:0;transition:opacity .3s;border-radius:20px;}
+.sc:hover{transform:translateY(-5px);border-color:var(--glass-bright);box-shadow:0 14px 42px rgba(0,0,0,.32);}
+.sc:hover::before{opacity:1;}
+.sci{font-size:1.5rem;margin-bottom:12px;display:block;}
+.slbl{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+.sval{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;line-height:1;}
+.sunit{font-family:'Outfit',sans-serif;font-size:.8rem;color:var(--dim);margin-left:3px;}
+
+/* ── SECTION LABEL ── */
+.slabel{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.slabel span{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);}
+.slabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--glass-border),transparent);}
+
+/* ── HOURLY ── */
+.htrack{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;scrollbar-width:none;}
+.htrack::-webkit-scrollbar{display:none;}
+.hc{flex-shrink:0;min-width:80px;background:var(--glass);border:1px solid var(--glass-border);border-radius:17px;padding:16px 12px;text-align:center;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);scroll-snap-align:start;transition:transform .25s,border-color .3s;}
+.hc:hover{transform:translateY(-5px);border-color:var(--glass-bright);}
+.hc.now{background:linear-gradient(135deg,rgba(168,216,240,.2),rgba(168,216,240,.06));border-color:rgba(168,216,240,.35);}
+.hct{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--dim);margin-bottom:8px;}
+.hcico{font-size:1.6rem;margin:4px 0;}
+.hctemp{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-top:6px;}
+.hcpop{font-size:.62rem;color:var(--ice);margin-top:3px;}
+
+/* ── FORECAST ── */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:13px;}
+.fc{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;padding:22px 14px;text-align:center;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:transform .25s,border-color .3s,box-shadow .3s;}
+.fc:hover{transform:translateY(-6px);border-color:var(--glass-bright);box-shadow:0 14px 38px rgba(0,0,0,.3);}
+.fday{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.15em;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+.fico{font-size:2.4rem;margin:8px 0;}
+.fhi{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;color:var(--gold);}
+.flo{font-size:.8rem;color:var(--dim);margin-top:4px;}
+.fbar{height:4px;background:rgba(255,255,255,.08);border-radius:99px;margin-top:12px;overflow:hidden;}
+.ffill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ice),var(--gold));}
+
+/* ── SUN + AQI ── */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.sun-cards{display:flex;flex-direction:column;gap:13px;}
+.sncard{background:var(--glass);border:1px solid var(--glass-border);border-radius:18px;padding:20px 22px;backdrop-filter:blur(20px);display:flex;align-items:center;gap:16px;transition:transform .25s,border-color .3s;}
+.sncard:hover{transform:translateY(-3px);border-color:var(--glass-bright);}
+.snico{font-size:2.3rem;filter:drop-shadow(0 0 12px rgba(245,200,66,.5));}
+.snlbl{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+.sntime{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:700;}
+
+.aqi-card{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;padding:26px 28px;backdrop-filter:blur(20px);display:none;}
+.aqitop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.aqilbl{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.aqival{font-family:'Playfair Display',serif;font-size:2.3rem;font-weight:700;line-height:1;}
+.aqidesc{font-size:.88rem;font-weight:500;margin-top:4px;}
+.aqitrack{height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;position:relative;}
+.aqifill{height:100%;border-radius:99px;transition:width 1.5s cubic-bezier(.16,1,.3,1);position:relative;}
+.aqifill::after{content:'';position:absolute;right:0;top:50%;transform:translate(50%,-50%);width:14px;height:14px;border-radius:50%;background:inherit;box-shadow:0 0 12px currentColor;filter:brightness(1.5);}
+.aqiticks{display:flex;justify-content:space-between;margin-top:9px;}
+.aqitick{font-family:'Space Mono',monospace;font-size:.52rem;color:var(--dimmer);}
+
+/* ── ANIMATIONS ── */
+@keyframes riseIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  .hero-body{padding:24px 22px 20px;}
+  .tbig,.tfeels{text-align:left;}
+  .bottom-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="sky" id="sky">
+  <div class="orb o1"></div><div class="orb o2"></div>
+  <div class="orb o3"></div><div class="orb o4"></div>
+  <div class="stars" id="stars"></div>
+</div>
+
+<div class="app">
+
+  <header>
+    <div class="logo-row">
+      <span class="logo-icon">🌤️</span>
+      <div class="logo">SKYE</div>
+    </div>
+    <div class="tagline"><span class="dot"></span>Atmospheric Intelligence</div>
+  </header>
+
+  <div class="api-panel" id="apiPanel">
+    <div class="ap-title">⚡ Quick Setup</div>
+    <p>SKYE runs on the free <a href="https://openweathermap.org/api" target="_blank">OpenWeatherMap API</a>. Sign up for a free key and paste it below to get started.</p>
+    <div class="api-row">
+      <input type="text" id="apiKeyInput" placeholder="Paste your API key here…"/>
+      <button class="btn-gold" onclick="saveKey()">Activate</button>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="si">🔍</span>
+      <input type="text" id="cityInput" placeholder="Search any city in the world…" onkeydown="if(event.key==='Enter')go()"/>
+      <button class="sbtn" onclick="go()">Search</button>
+    </div>
+    <div class="unit-row">
+      <button class="ubtn active" id="btnC" onclick="setUnit('metric')">°C · Metric</button>
+      <button class="ubtn" id="btnF" onclick="setUnit('imperial')">°F · Imperial</button>
+    </div>
+  </div>
+
+  <div class="err" id="err"></div>
+  <div class="loader" id="loader"><div class="ring"></div><p>SCANNING ATMOSPHERE…</p></div>
+
+  <div class="output" id="output">
+
+    <div class="hero" id="hero">
+      <div class="hero-band"></div>
+      <div class="hero-deco"></div><div class="hero-deco2"></div>
+      <div class="hero-body">
+        <div class="htop">
+          <div>
+            <div class="cname" id="cname">—</div>
+            <div class="csub" id="csub">—</div>
+          </div>
+          <div>
+            <div class="tbig" id="tbig">—</div>
+            <div class="tfeels" id="tfeels">—</div>
+          </div>
+        </div>
+        <div class="hcond">
+          <div class="cico" id="cico">🌡️</div>
+          <div>
+            <div class="cdesc" id="cdesc">—</div>
+            <div class="cextra" id="cextra">—</div>
+          </div>
+          <div class="hilo">
+            <div class="hhi" id="hhi">—</div>
+            <div class="hlo" id="hlo">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sgrid" id="sgrid"></div>
+
+    <div>
+      <div class="slabel"><span>Hourly Forecast</span></div>
+      <div class="htrack" id="htrack"></div>
+    </div>
+
+    <div>
+      <div class="slabel"><span>5-Day Outlook</span></div>
+      <div class="fgrid" id="fgrid"></div>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <div class="slabel"><span>Sun Schedule</span></div>
+        <div class="sun-cards" id="suncards"></div>
+      </div>
+      <div>
+        <div class="slabel"><span>Air Quality</span></div>
+        <div class="aqi-card" id="aqicard">
+          <div class="aqitop">
+            <div>
+              <div class="aqilbl">AQI Index</div>
+              <div class="aqival" id="aqival">—</div>
+              <div class="aqidesc" id="aqidesc">—</div>
+            </div>
+            <span style="font-size:3rem" id="aqiemo">🌿</span>
+          </div>
+          <div class="aqitrack"><div class="aqifill" id="aqifill" style="width:0%"></div></div>
+          <div class="aqiticks">
+            <span class="aqitick">Good</span><span class="aqitick">Fair</span>
+            <span class="aqitick">Moderate</span><span class="aqitick">Poor</span>
+            <span class="aqitick">Very Poor</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Stars
+(function(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<160;i++){
+    const s=document.createElement('div');s.className='star';
+    const big=Math.random()<0.15;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${big?3:2}px;height:${big?3:2}px;animation-duration:${2+Math.random()*3.5}s;animation-delay:${Math.random()*5}s;opacity:${0.1+Math.random()*0.5}`;
+    c.appendChild(s);
+  }
+})();
+
+let KEY=localStorage.getItem('skye_key')||'',unit='metric',lastCity='';
+if(KEY)document.getElementById('apiPanel').style.display='none';
+
+function saveKey(){
+  const v=document.getElementById('apiKeyInput').value.trim();
+  if(!v)return;KEY=v;localStorage.setItem('skye_key',v);
+  document.getElementById('apiPanel').style.display='none';showErr('');
+}
+function setUnit(u){
+  unit=u;
+  document.getElementById('btnC').classList.toggle('active',u==='metric');
+  document.getElementById('btnF').classList.toggle('active',u==='imperial');
+  if(lastCity)go();
+}
+const sym=()=>unit==='metric'?'°C':'°F';
+const spd=()=>unit==='metric'?'m/s':'mph';
+
+function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.toggle('show',!!m);}
+function setLoad(v){
+  document.getElementById('loader').classList.toggle('show',v);
+  const o=document.getElementById('output');
+  if(!v&&lastCity)o.classList.add('show');else if(v)o.classList.remove('show');
+}
+
+function emo(id,pod){
+  if(id>=200&&id<300)return'⛈️';if(id>=300&&id<400)return'🌦️';
+  if(id>=500&&id<600){if(id===511)return'🌨️';return id<502?'🌧️':'⛈️';}
+  if(id>=600&&id<700)return id===611?'🌨️':'❄️';
+  if(id>=700&&id<800){if(id===741)return'🌫️';if(id===781)return'🌪️';return'🌁';}
+  if(id===800)return pod==='n'?'🌙':'☀️';
+  if(id===801)return'🌤️';if(id===802)return'⛅';if(id>=803)return'☁️';
+  return'🌡️';
+}
+function dir(d){return['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8];}
+
+const AQIC=[
+  {t:'Good',c:'#69ffb4',bg:'linear-gradient(90deg,#69ffb4,#22c55e)',e:'🌿'},
+  {t:'Fair',c:'#a3e635',bg:'linear-gradient(90deg,#a3e635,#84cc16)',e:'😊'},
+  {t:'Moderate',c:'#fbbf24',bg:'linear-gradient(90deg,#fbbf24,#f59e0b)',e:'😐'},
+  {t:'Poor',c:'#f97316',bg:'linear-gradient(90deg,#f97316,#ea580c)',e:'😷'},
+  {t:'Very Poor',c:'#ef4444',bg:'linear-gradient(90deg,#ef4444,#dc2626)',e:'☠️'},
+];
+
+const SKIES={
+  thunder:'linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)',
+  rain:'linear-gradient(135deg,#1c1c3a 0%,#2d3561 50%,#1a2940 100%)',
+  snow:'linear-gradient(135deg,#1a2a3a 0%,#2a3f5f 50%,#3a5f7a 100%)',
+  sunny:'linear-gradient(135deg,#0a1628 0%,#1a3a6e 50%,#2a5fa8 100%)',
+  night:'linear-gradient(135deg,#050610 0%,#0d0e2a 50%,#1a1b3a 100%)',
+  cloud:'linear-gradient(135deg,#1a1e35 0%,#252b4a 50%,#1e253d 100%)',
+  default:'linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)',
+};
+
+async function go(){
+  const city=document.getElementById('cityInput').value.trim();
+  if(!city)return;if(!KEY){showErr('Please activate your API key first.');return;}
+  lastCity=city;showErr('');setLoad(true);
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=${unit}&appid=${KEY}`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=${unit}&appid=${KEY}`)
+    ]);
+    if(!r1.ok){const e=await r1.json();throw new Error(e.message||'City not found');}
+    const [cur,fore]=await Promise.all([r1.json(),r2.json()]);
+    const {lat,lon}=cur.coord;
+    const r3=await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${KEY}`);
+    const air=await r3.json();
+    render(cur,fore,air);
+  }catch(e){showErr('⚠ '+e.message);setLoad(false);}
+}
+
+function render(cur,fore,air){
+  const s=sym(),sp=spd();
+  const hr=new Date().getHours();
+  const pod=hr>=6&&hr<20?'d':'n';
+
+  // Dynamic sky
+  const id=cur.weather[0].id;
+  let sky=SKIES.default;
+  if(id>=200&&id<300)sky=SKIES.thunder;
+  else if(id>=300&&id<600)sky=SKIES.rain;
+  else if(id>=600&&id<700)sky=SKIES.snow;
+  else if(id===800&&pod==='d')sky=SKIES.sunny;
+  else if(id===800&&pod==='n')sky=SKIES.night;
+  else if(id>800)sky=SKIES.cloud;
+  document.getElementById('sky').style.background=sky;
+
+  // Hero
+  document.getElementById('cname').textContent=cur.name+', '+cur.sys.country;
+  document.getElementById('csub').textContent=
+    new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+
+    '  ·  '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tbig').textContent=Math.round(cur.main.temp)+s;
+  document.getElementById('tfeels').textContent='Feels like '+Math.round(cur.main.feels_like)+s;
+  document.getElementById('cico').textContent=emo(id,pod);
+  document.getElementById('cdesc').textContent=cur.weather[0].description;
+  document.getElementById('cextra').textContent=`Humidity ${cur.main.humidity}%  ·  Wind ${Math.round(cur.wind.speed)} ${sp}${cur.wind.deg!=null?' '+dir(cur.wind.deg):''}`;
+  document.getElementById('hhi').textContent='↑ '+Math.round(cur.main.temp_max)+s;
+  document.getElementById('hlo').textContent='↓ '+Math.round(cur.main.temp_min)+s;
+
+  // Stats
+  const stats=[
+    {i:'💧',l:'Humidity',v:cur.main.humidity,u:'%'},
+    {i:'🌬️',l:'Wind',v:Math.round(cur.wind.speed),u:sp+(cur.wind.deg!=null?' '+dir(cur.wind.deg):'')},
+    {i:'🔭',l:'Visibility',v:(cur.visibility/1000).toFixed(1),u:'km'},
+    {i:'⏱️',l:'Pressure',v:cur.main.pressure,u:'hPa'},
+    {i:'☁️',l:'Clouds',v:cur.clouds.all,u:'%'},
+    {i:'🌡️',l:'Dew Point',v:Math.round(cur.main.temp-(100-cur.main.humidity)/5),u:s},
+  ];
+  document.getElementById('sgrid').innerHTML=stats.map((st,i)=>
+    `<div class="sc" style="animation:riseIn .6s ${.05+i*.07}s cubic-bezier(.16,1,.3,1) both">
+      <span class="sci">${st.i}</span>
+      <div class="slbl">${st.l}</div>
+      <div class="sval">${st.v}<span class="sunit">${st.u}</span></div>
+    </div>`
+  ).join('');
+
+  // Hourly
+  document.getElementById('htrack').innerHTML=fore.list.slice(0,10).map((h,i)=>{
+    const d=new Date(h.dt*1000);
+    const p=d.getHours()>=6&&d.getHours()<20?'d':'n';
+    const t=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+    const pop=h.pop?Math.round(h.pop*100):0;
+    return`<div class="hc${i===0?' now':''}">
+      <div class="hct">${i===0?'NOW':t}</div>
+      <div class="hcico">${emo(h.weather[0].id,p)}</div>
+      <div class="hctemp">${Math.round(h.main.temp)}${s}</div>
+      ${pop>0?`<div class="hcpop">💧 ${pop}%</div>`:''}
+    </div>`;
+  }).join('');
+
+  // 5-day
+  const days={};
+  fore.list.forEach(item=>{
+    const k=new Date(item.dt*1000).toLocaleDateString('en-US',{weekday:'short'});
+    if(!days[k])days[k]={hi:-999,lo:999,ids:[]};
+    days[k].hi=Math.max(days[k].hi,item.main.temp_max);
+    days[k].lo=Math.min(days[k].lo,item.main.temp_min);
+    days[k].ids.push(item.weather[0].id);
+  });
+  const dk=Object.keys(days).slice(0,5);
+  const allHi=dk.map(d=>days[d].hi),allLo=dk.map(d=>days[d].lo);
+  const maxH=Math.max(...allHi),minL=Math.min(...allLo),rng=maxH-minL||1;
+  document.getElementById('fgrid').innerHTML=dk.map((d,i)=>{
+    const dd=days[d];
+    const eid=dd.ids[Math.floor(dd.ids.length/2)];
+    const bw=Math.round(((dd.hi-minL)/rng)*100);
+    return`<div class="fc" style="animation:riseIn .6s ${.1+i*.07}s cubic-bezier(.16,1,.3,1) both">
+      <div class="fday">${d}</div>
+      <div class="fico">${emo(eid,'d')}</div>
+      <div class="fhi">${Math.round(dd.hi)}${s}</div>
+      <div class="flo">${Math.round(dd.lo)}${s}</div>
+      <div class="fbar"><div class="ffill" style="width:${bw}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Sun
+  const sr=new Date(cur.sys.sunrise*1000).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const ss=new Date(cur.sys.sunset*1000).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  document.getElementById('suncards').innerHTML=`
+    <div class="sncard"><span class="snico">🌅</span><div><div class="snlbl">Sunrise</div><div class="sntime">${sr}</div></div></div>
+    <div class="sncard"><span class="snico">🌇</span><div><div class="snlbl">Sunset</div><div class="sntime">${ss}</div></div></div>
+  `;
+
+  // AQI
+  if(air?.list?.[0]){
+    const aqi=(air.list[0].main.aqi||1)-1;
+    const ac=AQIC[Math.min(aqi,4)];
+    document.getElementById('aqival').textContent=aqi+1;
+    document.getElementById('aqidesc').textContent=ac.t;
+    document.getElementById('aqidesc').style.color=ac.c;
+    document.getElementById('aqiemo').textContent=ac.e;
+    const f=document.getElementById('aqifill');
+    f.style.background=ac.bg;
+    setTimeout(()=>{f.style.width=((aqi+1)/5*100)+'%';},100);
+    document.getElementById('aqicard').style.display='block';
+  }
+
+  setLoad(false);
+}
+</script>
+</body>
+</html> 
